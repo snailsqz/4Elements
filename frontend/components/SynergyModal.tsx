@@ -1,7 +1,15 @@
 "use client";
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { X, Flame, Wind, Droplets, Mountain, Zap } from "lucide-react";
+import {
+  X,
+  Flame,
+  Wind,
+  Droplets,
+  Mountain,
+  Zap,
+  CheckCircle2,
+} from "lucide-react";
 
 interface SynergyModalProps {
   myId: number;
@@ -68,6 +76,30 @@ export default function SynergyModal({
       isCancelled = true; // บอกว่า "รอบเก่า ยกเลิกนะ!"
     };
   }, [myId, partnerId]);
+
+  const renderBulletList = (text: string) => {
+    if (!text) return null;
+    const lines = text.split("\n").filter((line) => line.trim() !== "");
+    return (
+      <ul className="space-y-2 mt-2">
+        {lines.map((line, index) => {
+          const cleanText = line.replace(/^[-•*]\s*/, "").trim();
+          return (
+            <li
+              key={index}
+              className="flex items-start gap-2 text-slate-600 text-sm leading-relaxed"
+            >
+              <CheckCircle2
+                size={16}
+                className="text-green-500 mt-0.5 shrink-0"
+              />
+              <span>{cleanText}</span>
+            </li>
+          );
+        })}
+      </ul>
+    );
+  };
 
   // ฟังก์ชันเลือกไอคอนธาตุ
   const getElementIcon = (animal: string) => {
@@ -246,9 +278,9 @@ export default function SynergyModal({
                   <h4 className="font-bold text-slate-700 mb-2 flex items-center gap-2">
                     🧐 วิเคราะห์เคมี
                   </h4>
-                  <p className="text-slate-600 leading-relaxed text-sm">
-                    {data.ai_analysis.analysis}
-                  </p>
+                  <div className="text-slate-600 leading-relaxed text-sm">
+                    {data && renderBulletList(data.ai_analysis.analysis)}
+                  </div>
                 </div>
 
                 <div className="bg-yellow-50 border border-yellow-100 p-4 rounded-xl flex gap-3 items-start">

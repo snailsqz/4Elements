@@ -3,8 +3,9 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import UserCard from "@/components/UserCard";
 import SynergyModal from "@/components/SynergyModal"; // 1. นำเข้า
+import InfoModal from "@/components/InfoModal";
 import toast from "react-hot-toast";
-import { Users } from "lucide-react";
+import { Users, HelpCircle } from "lucide-react";
 
 interface User {
   id: number;
@@ -22,6 +23,8 @@ export default function Home() {
   const [myId, setMyId] = useState<number | null>(null);
   const [myAnimal, setMyAnimal] = useState<string | null>(null);
   const [myName, setMyName] = useState<string | null>(null);
+  const [showInfo, setShowInfo] = useState(false);
+  const [buttonBottom, setButtonBottom] = useState(24);
 
   const checkLoginStatus = () => {
     const storedId = localStorage.getItem("myUserId");
@@ -38,6 +41,37 @@ export default function Home() {
       setMyName(null);
     }
   };
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const footer = document.getElementById("site-footer");
+      if (!footer) return;
+
+      // หาตำแหน่งขอบบนของ Footer เทียบกับหน้าจอ
+      const footerRect = footer.getBoundingClientRect();
+      const windowHeight = window.innerHeight;
+
+      // ถ้าขอบบนของ Footer เริ่มโผล่เข้ามาในจอ (ค่าน้อยกว่าความสูงจอ)
+      if (footerRect.top < windowHeight) {
+        // คำนวณส่วนต่างว่า Footer กินที่เข้ามาเท่าไหร่
+        const overlap = windowHeight - footerRect.top;
+        // ดันปุ่มขึ้น = ระยะปกติ (24) + ส่วนที่ Footer กินเข้ามา + เผื่อช่องว่างนิดหน่อย (10)
+        setButtonBottom(24 + overlap + 10);
+      } else {
+        // ถ้า Footer ยังไม่มา ให้กลับไปที่เดิม
+        setButtonBottom(24);
+      }
+    };
+
+    // ติดตั้งตัวดักจับ
+    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("resize", handleScroll); // กันเหนียวเผื่อย่อขยายจอ
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleScroll);
+    };
+  }, []);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -78,7 +112,7 @@ export default function Home() {
   };
 
   return (
-    <div className="h-full w-full max-w-5xl mx-auto mb-12 mt-5">
+    <div className="relative h-full w-full max-w-5xl mx-auto mb-12 mt-5">
       {/* --- NEW DASHBOARD BANNER --- */}
       <div className="relative bg-white rounded-3xl p-8 mb-8 shadow-sm border border-slate-100 overflow-hidden">
         {/* Background Decorative Blobs (ตกแต่งพื้นหลังให้ดูมีมิติ) */}
@@ -227,6 +261,8 @@ export default function Home() {
         </div>
       </div>
 
+      {/* --- ✨ ส่วนที่เพิ่ม: Modal --- */}
+      {showInfo && <InfoModal onClose={() => setShowInfo(false)} />}
       {loading ? (
         <div className="text-center p-10 text-zinc-900 text-3xl">
           Loading...
@@ -259,6 +295,19 @@ export default function Home() {
           ยังไม่มีสมาชิกในทีม
         </div>
       )}
+      <button
+        onClick={() => setShowInfo(true)}
+        // ใช้ style เพื่อกำหนดตำแหน่ง bottom แบบ Real-time
+        style={{ bottom: `${buttonBottom}px` }}
+        className="fixed right-6 z-40 bg-white text-slate-500 hover:text-blue-600 p-3 rounded-full shadow-lg border border-slate-200 hover:border-blue-200 hover:shadow-xl transition-all duration-75 group"
+        // *หมายเหตุ: ใช้ duration-75 หรือไม่ต้องใส่ เพื่อให้มันขยับตามนิ้วทันทีไม่หน่วง
+        title="เกี่ยวกับระบบ"
+      >
+        <HelpCircle
+          size={28}
+          className="group-hover:scale-110 transition-transform"
+        />
+      </button>
     </div>
   );
 }

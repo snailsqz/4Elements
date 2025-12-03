@@ -1,5 +1,5 @@
 "use client";
-import { useState, CSSProperties } from "react";
+import { useState, useEffect, CSSProperties } from "react";
 import {
   User,
   Flame,
@@ -14,67 +14,71 @@ import {
 interface UserCardProps {
   name: string;
   animal: string;
-  type: string; // D, I, S, C
+  type: string;
 }
 
 interface Particle {
   id: number;
-  left: number; // ตำแหน่งเริ่มแกน X
-  top: number; // ตำแหน่งเริ่มแกน Y (สำหรับลม/ไฟ)
+  left: number;
+  top: number;
   delay: number;
   duration: number;
-  size: number; // ขนาดไอคอน
+  size: number;
   rotation: number;
 }
 
 export default function UserCard({ name, animal, type }: UserCardProps) {
-  // 1. สร้าง State เพื่อจับว่าเมาส์จ่ออยู่ไหม
   const [isHovered, setIsHovered] = useState(false);
   const [particles, setParticles] = useState<Particle[]>([]);
 
-  const handleMouseEnter = () => {
-    setIsHovered(true);
-    if (particles.length === 0) {
+  // 1. สร้างเม็ดฝนเตรียมไว้เลย "ตั้งแต่โหลดเสร็จ" (Pre-calculate)
+  // ไม่ต้องรอ Hover แล้วค่อยสร้าง จะได้ไม่หน่วง
+  useEffect(() => {
+    const timer = setTimeout(() => {
       const generatedParticles = Array.from({ length: 15 }, (_, i) => ({
         id: i,
-        left: Math.random() * 100, // สุ่มตำแหน่งแนวนอน 0-100%
-        top: Math.random() * 100, // สุ่มตำแหน่งแนวตั้ง 0-100% (ใช้สำหรับลม)
-        delay: Math.random() * 1000,
-        duration: Math.random() * 2000 + 1500, // ช้าลงหน่อยจะได้เห็นชัด
-        size: Math.random() * 10 + 10, // ขนาด 10-20px
+        left: Math.random() * 100,
+        top: Math.random() * 100,
+        // ปรับ Delay ให้น้อยลง (0-100ms) เพื่อให้มาไวๆ
+        delay: Math.random() * 100,
+        duration: Math.random() * 1000 + 800,
+        size: Math.random() * 10 + 10,
         rotation: Math.random() * 360,
       }));
-      setParticles(generatedParticles);
-    }
-  };
 
+      setParticles(generatedParticles);
+    }, 0); // 0ms คือรอให้ React ทำงานหลักเสร็จก่อน แล้วค่อยทำอันนี้ทันที
+
+    return () => clearTimeout(timer); // ล้าง timer ถ้า component ถูกทำลาย
+  }, []); // ทำครั้งเดียวตอนหน้าเว็บโหลด
+
+  const handleMouseEnter = () => setIsHovered(true); // แค่เปลี่ยนสถานะ (เร็วปรี๊ด)
   const handleMouseLeave = () => setIsHovered(false);
 
-  // 2. Config แยกตามธาตุ (สี, ไอคอนเม็ดฝน, ท่าอนิเมชั่น)
   const getElementConfig = (t: string) => {
     switch (t) {
-      case "D": // 🔥 ไฟ: ลอยขึ้นจากข้างล่าง
+      case "D":
         return {
           color: "#ef4444",
           mainIcon: <Flame className={isHovered ? "animate-bounce" : ""} />,
-          particleIcon: <Flame fill="currentColor" />, // ใช้ Icon เป็นเม็ดฝน
+          particleIcon: <Flame fill="currentColor" />,
           animationName: "rise-up",
         };
-      case "I": // 💨 ลม: พัดจากขวาไปซ้าย
+      case "I":
         return {
           color: "#eab308",
           mainIcon: <Wind className={isHovered ? "animate-pulse" : ""} />,
-          particleIcon: <Wind style={{ transform: "scaleX(-1)" }} />,
-          animationName: "slide-left",
+          particleIcon: <Wind style={{}} />, // กลับด้านลม
+          animationName: "slide-right",
         };
-      case "S": // 🍃 ดิน: ใบไม้ร่วงเฉียงซ้าย
+      case "S":
         return {
           color: "#22c55e",
           mainIcon: <Mountain className={isHovered ? "animate-bounce" : ""} />,
           particleIcon: <Leaf fill="currentColor" />,
           animationName: "fall-diagonal",
         };
-      case "C": // 💧 น้ำ: หยดลงแนวดิ่ง
+      case "C":
         return {
           color: "#3b82f6",
           mainIcon: <Droplet className={isHovered ? "animate-pulse" : ""} />,
@@ -96,19 +100,18 @@ export default function UserCard({ name, animal, type }: UserCardProps) {
   const getElementColor = (t: string) => {
     switch (t) {
       case "D":
-        return "#ef4444"; // Red-500
+        return "#ef4444";
       case "I":
-        return "#eab308"; // Yellow-500
+        return "#eab308";
       case "S":
-        return "#22c55e"; // Green-500
+        return "#22c55e";
       case "C":
-        return "#3b82f6"; // Blue-500
+        return "#3b82f6";
       default:
-        return "#94a3b8"; // Slate-400
+        return "#94a3b8";
     }
   };
 
-  // 3. ฟังก์ชันเลือกไอคอน
   const getIcon = (t: string) => {
     switch (t) {
       case "D":
@@ -128,34 +131,29 @@ export default function UserCard({ name, animal, type }: UserCardProps) {
 
   return (
     <div
-      // --- Pure JS Events ---
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      // --- Pure JS Styles (ทำงานแน่นอน) ---
       style={{
         cursor: "pointer",
-        transition: "all 0.3s ease-out", // อนิเมชั่นนุ่มๆ
+        transition: "all 0.3s ease-out",
         backgroundColor: "white",
         borderRadius: "16px",
         padding: "20px",
-        border: isHovered
-          ? `2px solid ${themeColor}` // จ่อ: ขอบสีธาตุ
-          : "2px solid #e2e8f0", // ปกติ: ขอบเทาจางๆ
+        border: isHovered ? `2px solid ${themeColor}` : "2px solid #e2e8f0",
         transform: isHovered
-          ? "translateY(-5px) scale(1.02)" // จ่อ: ลอยขึ้น + ขยาย
+          ? "translateY(-5px) scale(1.02)"
           : "translateY(0) scale(1)",
         boxShadow: isHovered
-          ? `0 10px 25px -5px ${themeColor}40` // จ่อ: เงาสีธาตุ (ใส่ 40 คือโปร่งแสง)
+          ? `0 10px 25px -5px ${themeColor}40`
           : "0 1px 3px 0 rgba(0, 0, 0, 0.1)",
         borderLeft: isHovered
           ? `2px solid ${themeColor}`
-          : `6px solid ${themeColor}`, // ปกติ: เงาธรรมดา
+          : `6px solid ${themeColor}`,
       }}
-      className="relative overflow-hidden" // เก็บไว้แค่จัด layout พื้นฐาน
+      className="relative overflow-hidden"
     >
       <style jsx>{`
         @keyframes rise-up {
-          /* ไฟ: ลอยขึ้น */
           0% {
             transform: translateY(100px) scale(0.5);
             opacity: 0;
@@ -168,22 +166,20 @@ export default function UserCard({ name, animal, type }: UserCardProps) {
             opacity: 0;
           }
         }
-        @keyframes slide-left {
-          /* ลม: ขวาไปซ้าย */
+        @keyframes slide-right {
           0% {
-            transform: translateX(50px) rotate(0deg);
+            transform: translateX(-50px) rotate(0deg);
             opacity: 0;
           }
           20% {
             opacity: 0.6;
           }
           100% {
-            transform: translateX(-300px) rotate(-10deg);
+            transform: translateX(300px) rotate(10deg);
             opacity: 0;
           }
         }
         @keyframes fall-down {
-          /* น้ำ: ดิ่งลง */
           0% {
             transform: translateY(-50px);
             opacity: 0;
@@ -197,7 +193,6 @@ export default function UserCard({ name, animal, type }: UserCardProps) {
           }
         }
         @keyframes fall-diagonal {
-          /* ดิน: เฉียงซ้าย + หมุน */
           0% {
             transform: translate(20px, -50px) rotate(0deg);
             opacity: 0;
@@ -212,10 +207,10 @@ export default function UserCard({ name, animal, type }: UserCardProps) {
         }
       `}</style>
 
-      {/* --- 4. Render Particles --- */}
+      {/* Render Particles ตลอดเวลา แต่ซ่อนด้วย Opacity หรือ isHovered */}
+      {/* ใช้ isHovered && ... เหมือนเดิมได้ แต่เพราะเราคำนวณไว้แล้ว มันจะเร็วกว่ามาก */}
       {isHovered &&
         particles.map((p) => {
-          // คำนวณตำแหน่งเริ่มต้น (Start Position) ตามธาตุ
           let startStyle: CSSProperties = {
             opacity: 0,
             pointerEvents: "none",
@@ -224,13 +219,10 @@ export default function UserCard({ name, animal, type }: UserCardProps) {
           };
 
           if (type === "D") {
-            // ไฟ: เริ่มข้างล่าง
             startStyle = { ...startStyle, bottom: "-20px", left: `${p.left}%` };
           } else if (type === "I") {
-            // ลม: เริ่มขวาสุด (กระจายแนวตั้ง)
-            startStyle = { ...startStyle, right: "-20px", top: `${p.top}%` };
+            startStyle = { ...startStyle, left: "-20px", top: `${p.top}%` };
           } else {
-            // น้ำ & ดิน: เริ่มข้างบน
             startStyle = { ...startStyle, top: "-30px", left: `${p.left}%` };
           }
 
@@ -239,24 +231,23 @@ export default function UserCard({ name, animal, type }: UserCardProps) {
               key={p.id}
               style={{
                 ...startStyle,
-                color: config.color, // สีตามธาตุ
-                // Animation
+                color: config.color,
                 animation: `${config.animationName} ${p.duration}ms linear infinite`,
                 animationDelay: `${p.delay}ms`,
               }}
             >
-              {/* เรนเดอร์ Icon แทน div สี่เหลี่ยม */}
               <div style={{ width: p.size, height: p.size, opacity: 0.6 }}>
                 {config.particleIcon}
               </div>
             </div>
           );
         })}
+
       <div className="flex items-center justify-between relative z-10">
         <div>
           <h3
             style={{
-              color: isHovered ? themeColor : "#1e293b", // จ่อ: ชื่อเปลี่ยนสีตามธาตุ
+              color: isHovered ? themeColor : "#1e293b",
               transition: "color 0.2s",
             }}
             className="font-bold text-lg"
@@ -266,7 +257,6 @@ export default function UserCard({ name, animal, type }: UserCardProps) {
 
           <p className="text-sm text-slate-500 mt-1 flex items-center gap-2">
             {animal}
-            {/* แสดงสถานะเมื่อ Hover */}
             <span
               style={{
                 opacity: isHovered ? 1 : 0,
@@ -281,11 +271,8 @@ export default function UserCard({ name, animal, type }: UserCardProps) {
           </p>
         </div>
 
-        {/* กล่องไอคอน */}
         <div
           style={{
-            // ปกติ: สีพื้นหลังจางๆ (20% opacity)
-            // Hover: สีเข้มขึ้น (40% opacity)
             backgroundColor: isHovered ? `${themeColor}40` : `${themeColor}20`,
             color: themeColor,
             transition: "all 0.3s",
@@ -297,7 +284,7 @@ export default function UserCard({ name, animal, type }: UserCardProps) {
           {getIcon(type)}
         </div>
       </div>
-      {/* (แถม) พื้นหลัง Effect จางๆ เวลา Hover */}
+
       <div
         style={{
           position: "absolute",
@@ -306,7 +293,7 @@ export default function UserCard({ name, animal, type }: UserCardProps) {
           width: "150px",
           height: "150px",
           background: `radial-gradient(circle, ${themeColor}30 0%, transparent 70%)`,
-          opacity: isHovered ? 0.6 : 0.3, // แสดงตลอดเวลาแต่จางๆ พุ่งขึ้นตอน Hover
+          opacity: isHovered ? 0.6 : 0.3,
           transition: "all 0.5s",
           pointerEvents: "none",
           filter: "blur(20px)",

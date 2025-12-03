@@ -2,7 +2,10 @@ import { Code, Heart } from "lucide-react";
 
 export default function Footer() {
   return (
-    <footer className="bg-slate-100 text-slate-500 py-8 border-t border-slate-200 mt-auto">
+    <footer
+      id="site-footer"
+      className="bg-slate-100 text-slate-500 py-8 border-t border-slate-200 mt-auto"
+    >
       <div className="container mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-4 items-center text-center md:text-left">
         {/* 1. Copyright: เหลือแค่ชื่อโปรเจกต์ */}
         <div className="text-sm font-medium flex items-center justify-center md:justify-start gap-2 md:justify-self-start">

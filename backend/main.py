@@ -41,6 +41,7 @@ class User(SQLModel, table=True):
     score_s: int
     score_c: int
     team_name: Optional[str] = Field(default=None)
+    analysis_result: Optional[str] = Field(default=None)
 
 class Answer(BaseModel):
     question_id: int
@@ -198,10 +199,20 @@ async def match_users_ai(req: MatchRequest, session: Session = Depends(get_sessi
     
     total_diff = diff_d + diff_i + diff_s + diff_c
 
-    calculated_score = min(100, int((total_diff / 60) * 100)) 
+    print(f"User 1 ({u1.name}) Scores: D{u1.score_d} I{u1.score_i} S{u1.score_s} C{u1.score_c}")
+    print(f"User 2 ({u2.name}) Scores: D{u2.score_d} I{u2.score_i} S{u2.score_s} C{u2.score_c}")
+    print(f"Total Diff: {total_diff}")
     
+    
+    synergy_bonus = int(total_diff * 0.8)
+    calculated_score = 60 + synergy_bonus
+    
+    # Cap ไว้ไม่ให้เกิน 98% (ให้ดูสมจริง ไม่เฟค 100%)
+    calculated_score = min(98, calculated_score)
+    
+    # Prompt จับคู่ (ฉบับกระชับ + บังคับ Bullet)
     match_prompt = ChatPromptTemplate.from_template("""
-    Role: You are "4Elements Master", an expert in team chemistry.
+    Role: You are "4Elements Master", an expert in team chemistry and DISC assessment.
     
     Analyze the synergy between:
     1. {name1} ({type1}) -> Scores: D={d1}, I={i1}, S={s1}, C={c1}
@@ -212,12 +223,12 @@ async def match_users_ai(req: MatchRequest, session: Session = Depends(get_sessi
 
     **CRITICAL INSTRUCTION:**
     Generate an analysis that justifies this score ({score}%).
-    - If Score < 50: Explain the friction/challenges politely.
-    - If Score > 80: Praise their perfect balance.
+    - If Score < 75: Focus on where they might clash slightly, but stay positive.
+    - If Score > 85: Praise their perfect balance and compatibility.
     
     **OUTPUT JSON FORMAT ONLY:**
     {{
-      "synergy_score": {score}, 
+      "synergy_score": {score},
       "synergy_name": "Creative Thai Pair Name (e.g. คู่กัดขิงก็รา, หยินหยางสมบูรณ์แบบ)",
       "element_visual": "Fire & Wind / Water & Earth",
       "analysis": "2-3 sentences in Thai matching the score of {score}%.",
@@ -260,7 +271,24 @@ async def analyze_user(user_id: int, session: Session = Depends(get_session)):
     user = session.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-
+    
+    if user.analysis_result:
+        print(f"✨ Load analysis for {user.name} from Database (No AI call)")
+        try:
+            # ดึง Text จาก DB มาแปลงกลับเป็น JSON
+            cached_analysis = json.loads(user.analysis_result)
+            
+            return {
+                "user": {
+                    "id": user.id, "name": user.name, "dominant_type": user.dominant_type, "animal": user.animal,
+                    "scores": {"D": user.score_d, "I": user.score_i, "S": user.score_s, "C": user.score_c}
+                },
+                "analysis": cached_analysis
+            }
+        except Exception as e:
+            print("⚠️ Cache corrupted, regenerating...")
+    
+    print(f"🔮 Calling AI for {user.name}...")
     # Prompt สำหรับวิเคราะห์คนเดียว (ฉบับแก้: ห้ามพูดชื่อซ้ำในคู่หู)
     analysis_prompt = ChatPromptTemplate.from_template("""
     Role: You are a "Friendly Personality Analyst MALE" who uses the 4 Animals (DISC) framework.
@@ -319,6 +347,10 @@ async def analyze_user(user_id: int, session: Session = Depends(get_session)):
     try:
         cleaned_json = raw_result.replace("```json", "").replace("```", "").strip()
         analysis_json = json.loads(cleaned_json)
+        user.analysis_result = json.dumps(analysis_json, ensure_ascii=False)
+        session.add(user)
+        session.commit()
+        print("💾 Saved analysis to Database!")
     except:
         analysis_json = {"error": "AI Error", "raw": raw_result}
 
