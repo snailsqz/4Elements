@@ -45,11 +45,9 @@ Kemii is an AI-powered team management and personality assessment platform desig
     venv\Scripts\activate
     # macOS/Linux:
     source venv/bin/activate
-    Install dependencies:
 3. Install dependencies:
     ```bash
     pip install -r requirements.txt
-    Create a .env file in the backend directory:
 4. Create a .env file in the backend directory:
    ```bash
    GOOGLE_API_KEY=your_gemini_api_key
