@@ -10,6 +10,8 @@ import {
   AlertCircle,
 } from "lucide-react";
 import DiscGraph from "@/components/DiscGraph";
+import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 
 // --- Interfaces (ก๊อปมาเหมือนเดิม) ---
 interface Scores {
@@ -113,6 +115,29 @@ export default function ResultClient({ data }: { data: ResultData }) {
   const router = useRouter();
   const { user, analysis } = data;
   const theme = getThemeColor(user.dominant_type);
+  const [isAuthorized, setIsAuthorized] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const myStoredId = localStorage.getItem("myUserId");
+
+      if (!myStoredId || myStoredId !== String(user.id)) {
+        toast.error("แอบดูผลลัพธ์ของคนอื่นไม่ได้นะจ๊ะ 😜", {
+          icon: "🔒",
+          duration: 4000,
+        });
+        router.push("/");
+      } else {
+        setIsAuthorized(true);
+      }
+    }, 0);
+
+    return () => clearTimeout(timer); // Cleanup กันเหนียว
+  }, [user.id, router]);
+
+  if (!isAuthorized) {
+    return <div className="min-h-screen bg-slate-100"></div>;
+  }
 
   return (
     <div className="min-h-screen bg-slate-100 py-10 px-4">

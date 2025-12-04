@@ -376,7 +376,7 @@ export default function AssessmentPage() {
         <input
           type="text"
           className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-slate-900"
-          placeholder="เช่น สมชาย ใจดี"
+          placeholder="เบส"
           value={name}
           onChange={(e) => setName(e.target.value)}
         />

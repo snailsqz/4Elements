@@ -2,7 +2,14 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Users, ClipboardList, LogOut, Shuffle, UserPlus } from "lucide-react";
+import {
+  Users,
+  ClipboardList,
+  LogOut,
+  Shuffle,
+  UserPlus,
+  Orbit,
+} from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function Navbar() {
@@ -99,16 +106,14 @@ export default function Navbar() {
   return (
     <nav className="bg-slate-100 backdrop-blur-md text-slate-600 p-4  relative top-0 z-50 shadow-sm border-b border-slate-200/50 transition-all">
       <div className="container mx-auto flex justify-between items-center">
-        {/* Logo ซ้ายมือ */}
         <Link
           href="/"
           className="text-xl font-bold flex items-center gap-2 text-slate-800 hover:text-green-500 transition"
         >
-          <Users size={28} />
-          <span className="hidden sm:inline">4Elements</span>
+          <Orbit size={28} />
+          <span className="hidden sm:inline">Kemii</span>
         </Link>
 
-        {/* เมนูขวามือ */}
         <div className="flex items-center gap-4 sm:gap-6">
           <Link
             href="/"

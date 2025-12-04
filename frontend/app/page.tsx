@@ -126,9 +126,9 @@ export default function Home() {
           <div>
             <h1 className="text-4xl md:text-5xl font-black text-slate-800 tracking-tight mb-2">
               <span className="text-transparent bg-clip-text bg-linear-to-r from-blue-600 via-indigo-600 to-purple-600">
-                4Elements
+                Kemii
               </span>{" "}
-              Team
+              <span className="text-slate-700">Team Alchemy</span>
             </h1>
             <p className="text-slate-500 text-lg max-w-xl">
               สำรวจจักรวาลของทีม ค้นหาเคมีที่ลงตัว{" "}
